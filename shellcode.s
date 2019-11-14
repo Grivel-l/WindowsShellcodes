@@ -17,9 +17,9 @@ section .text
     add r11, 0x88         ; IMAGE_DATA_DIRECTORY - First one is export table
     mov r9, r10
     add r9d, [r11d]
-    mov r9d, [r9d + 0x20] ; r9 = Addres of RVA to RVA containing functions names
+    mov r9d, [r9d + 0x20] ; r9 = RVA to Array of RVA containing functions' name
     mov r11, r10
-    add r11d, r9d         ; RVA of array containing functions names
+    add r11d, r9d         ; Array of RVA containing functions' name
     int3
   getLDTE:
     push rdi
@@ -50,5 +50,5 @@ section .text
 section .data
   k32Name db "K", 0, "E", 0, "R", 0, "N", 0, "E", 0, "L", 0, "3", 0, "2", 0, ".", 0, "d", 0, "l", 0, "l", 0
   k32Len equ ($ - k32Name) / 2
-  functionName db "AddAtomA", 0
+  functionName db "LoadLibraryA", 0
   functionNameLen equ $ - functionName
