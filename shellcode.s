@@ -8,7 +8,12 @@ section .text
     mov rdx, functionName
     mov r8, functionNameLen
     call getFunction
+    int3
   getFunction:
+    push rbp
+    push rbx
+    push rdi
+    push rsi
     mov r10, [rax + 0x30] ; dll base address
     mov r9, r10
     add r9, 0x3c          ; r9 = RVA of PE signature
@@ -20,7 +25,37 @@ section .text
     mov r9d, [r9d + 0x20] ; r9 = RVA to Array of RVA containing functions' name
     mov r11, r10
     add r11d, r9d         ; Array of RVA containing functions' name
-    int3
+    mov rbx, 0
+    loop2:
+      mov r9, r10
+      add r9d, [r11d + ebx * 0x4]
+      mov rsi, r9
+      mov rdi, rdx
+      mov rbp, r8
+      strcmp:
+        cmpsb
+        jne next2
+        dec rbp
+        ; Maybe bug here, should I check EOF ?
+        cmp rbp, 0
+        je retAddr
+        jmp strcmp
+      next2:
+        inc rbx
+        jmp loop2
+    retAddr:
+      mov r9, r11
+      add r9, rbx
+      add r9, rbx
+      add r9, rbx
+      add r9, rbx
+      mov rax, r10
+      add eax, [r9d]
+    pop rsi
+    pop rdi
+    pop rbx
+    pop rbp
+    ret
   getLDTE:
     push rdi
     push rsi
@@ -28,7 +63,7 @@ section .text
     mov rax, [rax + 0x18] ; PPEB_LDR_DATA
     mov rax, [rax + 0x10] ; LIST_ENTRY/LDR_DATA_TABLE_ENTRY argv[0]
     mov rax, [rax]
-    loop:
+    loop1:
       mov esi, [rax + 0x60] ; BaseDLLName->Buffer
       mov edi, ecx
       mov rdx, k32Len
@@ -41,7 +76,7 @@ section .text
         jmp strcmpW
         next:
           mov rax, [rax]
-          jmp loop
+          jmp loop1
     done:
       pop rsi
       pop rdi
