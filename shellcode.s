@@ -14,6 +14,7 @@ section .text
     push rbx
     push rdi
     push rsi
+    push r12
     mov r10, [rax + 0x30] ; dll base address
     mov r9, r10
     add r9, 0x3c          ; r9 = RVA of PE signature
@@ -21,10 +22,11 @@ section .text
     add r11d, [r9d]       ; IMAGE_NT_HEADERS
     add r11, 0x88         ; IMAGE_DATA_DIRECTORY - First one is export table
     mov r9, r10
-    add r9d, [r11d]
-    mov r9d, [r9d + 0x20] ; r9 = RVA to Array of RVA containing functions' name
+    add r9d, [r11d]       ; r9 = IMAGE_EXPORT_DIRECTORY
+    mov r12, r10
+    add r12d, [r11d]       ; r12 = IMAGE_EXPORT_DIRECTORY
     mov r11, r10
-    add r11d, r9d         ; Array of RVA containing functions' name
+    add r11d, [r9d + 0x20]  ; Array of RVA containing functions' name
     mov rbx, 0
     loop2:
       mov r9, r10
@@ -36,7 +38,7 @@ section .text
         cmpsb
         jne next2
         dec rbp
-        ; Maybe bug here, should I check EOF ?
+        ; TODO Maybe bug here, should I check EOF ?
         cmp rbp, 0
         je retAddr
         jmp strcmp
@@ -44,13 +46,19 @@ section .text
         inc rbx
         jmp loop2
     retAddr:
-      mov r9, r11
-      add r9, rbx
-      add r9, rbx
-      add r9, rbx
-      add r9, rbx
+      mov r9, r10
+      add r9d, [r12d + 0x24]
       mov rax, r10
+      add r10d, [r9d]
+      add rbx, rbx
+      add r10, rbx
+      add r10, rbx
+      add r10, rbx
+      add r10, rbx
+      mov r9, r10
+      add r9d, [r12d + 0x1c]
       add eax, [r9d]
+    pop r12
     pop rsi
     pop rdi
     pop rbx
@@ -71,6 +79,7 @@ section .text
         cmpsw
         jne next
         dec rdx
+        ; TODO Maybe bug here, should I check EOF ?
         cmp rdx, 0
         je done
         jmp strcmpW
