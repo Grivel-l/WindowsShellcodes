@@ -3,11 +3,14 @@ global main
 section .text
   main:
     mov rcx, k32Name
+    mov rdx, k32Len
     call getLDTE          ; rax = Kernel32 Image directory
     mov rcx, rax
     mov rdx, functionName
     mov r8, functionNameLen
     call getFunction
+    mov rcx, user
+    call rax
     int3
   getFunction:
     push rbp
@@ -46,18 +49,14 @@ section .text
         inc rbx
         jmp loop2
     retAddr:
+      mov rax, r10
       mov r9, r10
       add r9d, [r12d + 0x24]
-      mov rax, r10
-      add r10d, [r9d]
-      add rbx, rbx
-      add r10, rbx
-      add r10, rbx
-      add r10, rbx
-      add r10, rbx
+      mov bx, [r9d + ebx]
+      dec ebx
       mov r9, r10
       add r9d, [r12d + 0x1c]
-      add eax, [r9d]
+      add eax, [r9d + ebx * 2]
     pop r12
     pop rsi
     pop rdi
@@ -74,13 +73,13 @@ section .text
     loop1:
       mov esi, [rax + 0x60] ; BaseDLLName->Buffer
       mov edi, ecx
-      mov rdx, k32Len
+      mov r8, rdx
       strcmpW:
         cmpsw
         jne next
-        dec rdx
+        dec r8
         ; TODO Maybe bug here, should I check EOF ?
-        cmp rdx, 0
+        cmp r8, 0
         je done
         jmp strcmpW
         next:
@@ -96,3 +95,4 @@ section .data
   k32Len equ ($ - k32Name) / 2
   functionName db "LoadLibraryA", 0
   functionNameLen equ $ - functionName
+  user db "user32.dll", 0
