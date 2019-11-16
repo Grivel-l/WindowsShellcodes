@@ -5,19 +5,22 @@ section .text
     mov rcx, k32Name
     mov rdx, k32Len
     call getLDTE          ; rax = Kernel32 Image directory
+    mov r12, rax
     mov rcx, rax
     mov rdx, functionName
     mov r8, functionNameLen
     call getFunction
-    mov rcx, user
-    call rax
     int3
+    mov rcx, r12
+    mov rdx, loadLibrary
+    call rax
   getFunction:
     push rbp
     push rbx
     push rdi
     push rsi
     push r12
+    push r13
     mov r10, [rax + 0x30] ; dll base address
     mov r9, r10
     add r9, 0x3c          ; r9 = RVA of PE signature
@@ -26,14 +29,13 @@ section .text
     add r11, 0x88         ; IMAGE_DATA_DIRECTORY - First one is export table
     mov r9, r10
     add r9d, [r11d]       ; r9 = IMAGE_EXPORT_DIRECTORY
-    mov r12, r10
-    add r12d, [r11d]       ; r12 = IMAGE_EXPORT_DIRECTORY
+    mov r12, r9           ; r12 = IMAGE_EXPORT_DIRECTORY
     mov r11, r10
     add r11d, [r9d + 0x20]  ; Array of RVA containing functions' name
     mov rbx, 0
     loop2:
       mov r9, r10
-      add r9d, [r11d + ebx * 0x4]
+      add r9d, [r11 + rbx * 0x4]
       mov rsi, r9
       mov rdi, rdx
       mov rbp, r8
@@ -49,14 +51,15 @@ section .text
         inc rbx
         jmp loop2
     retAddr:
-      mov rax, r10
       mov r9, r10
       add r9d, [r12d + 0x24]
-      mov bx, [r9d + ebx]
-      dec ebx
+      mov bx, [r9 + rbx * 2]
       mov r9, r10
-      add r9d, [r12d + 0x1c]
-      add eax, [r9d + ebx * 2]
+      add r9d, [r12d + 0x1c]    ; Array of RVAs
+      mov r13, r10
+      add r13d, [r9 + rbx * 4]
+      mov rax, r13
+    pop r13
     pop r12
     pop rsi
     pop rdi
@@ -93,6 +96,9 @@ section .text
 section .data
   k32Name db "K", 0, "E", 0, "R", 0, "N", 0, "E", 0, "L", 0, "3", 0, "2", 0, ".", 0, "d", 0, "l", 0, "l", 0
   k32Len equ ($ - k32Name) / 2
-  functionName db "LoadLibraryA", 0
+  functionName db "GetProcAddress", 0
   functionNameLen equ $ - functionName
-  user db "user32.dll", 0
+  user db "USER32.DLL", 0
+  user2 db "U", 0, "S", 0, "E", 0, "R", 0, "3", 0, "2", 0, ".", 0, "D", 0, "L", 0, "L", 0
+  user2Len equ ($ - user2) / 2
+  loadLibrary db "LoadLibraryA", 0
