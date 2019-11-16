@@ -10,10 +10,10 @@ section .text
     mov rdx, functionName
     mov r8, functionNameLen
     call getFunction
-    int3
     mov rcx, r12
     mov rdx, loadLibrary
     call rax
+    int3
   getFunction:
     push rbp
     push rbx
