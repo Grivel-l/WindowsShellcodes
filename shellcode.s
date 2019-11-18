@@ -1,5 +1,7 @@
 global main
 
+; 00007FFDB8EBA310 - GetProcAddress
+; 00007FFDB8EA0000 - K32.dll
 section .text
   main:
     mov rcx, k32Name
@@ -9,11 +11,8 @@ section .text
     mov rcx, rax
     mov rdx, functionName
     mov r8, functionNameLen
-    ; 00007FFE4BC4A310
-int3
     call getFunction
-int3
-    mov rcx, r12
+    mov rcx, [r12d + 0x30]
     mov rdx, loadLibrary
     call rax
     int3
@@ -117,4 +116,4 @@ section .data
   user db "USER32.DLL", 0
   user2 db "U", 0, "S", 0, "E", 0, "R", 0, "3", 0, "2", 0, ".", 0, "D", 0, "L", 0, "L", 0
   user2Len equ ($ - user2) / 2
-  loadLibrary db "LoadLibraryA", 0
+  loadLibrary db "GetProcAddress", 0
