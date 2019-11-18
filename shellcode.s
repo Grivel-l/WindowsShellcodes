@@ -10,10 +10,10 @@ section .text
     mov rdx, functionName
     mov r8, functionNameLen
     call getFunction
+    int3
     mov rcx, r12
     mov rdx, loadLibrary
     call rax
-    int3
   getFunction:
     push rbp
     push rbx
@@ -21,21 +21,25 @@ section .text
     push rsi
     push r12
     push r13
-    mov r10, [rax + 0x30] ; dll base address
+    mov r10, [rcx + 0x30] ; dll base address
     mov r9, r10
     add r9, 0x3c          ; r9 = RVA of PE signature
+    mov r9d, [r9]
     mov r11, r10
-    add r11d, [r9d]       ; IMAGE_NT_HEADERS
+    add r11, r9       ; IMAGE_NT_HEADERS
     add r11, 0x88         ; IMAGE_DATA_DIRECTORY - First one is export table
+    mov r11d, [r11]
     mov r9, r10
-    add r9d, [r11d]       ; r9 = IMAGE_EXPORT_DIRECTORY
+    add r9, r11      ; r9 = IMAGE_EXPORT_DIRECTORY
     mov r12, r9           ; r12 = IMAGE_EXPORT_DIRECTORY
     mov r11, r10
-    add r11d, [r9d + 0x20]  ; Array of RVA containing functions' name
+    mov r9d, [r9 + 0x20]
+    add r11, r9  ; Array of RVA containing functions' name
     mov rbx, 0
     loop2:
       mov r9, r10
-      add r9d, [r11 + rbx * 0x4]
+      mov esi, [r11 + rbx * 0x4]
+      add r9, rsi
       mov rsi, r9
       mov rdi, rdx
       mov rbp, r8
@@ -52,12 +56,15 @@ section .text
         jmp loop2
     retAddr:
       mov r9, r10
-      add r9d, [r12d + 0x24]
+      mov r12d, [r12 + 0x24]
+      add r9, r12
       mov bx, [r9 + rbx * 2]
       mov r9, r10
-      add r9d, [r12d + 0x1c]    ; Array of RVAs
+      mov r12d, [r12 + 0x1c]
+      add r9, r12   ; Array of RVAs
       mov r13, r10
-      add r13d, [r9 + rbx * 4]
+      mov r9d, [r9 + rbx * 4]
+      add r13, r9
       mov rax, r13
     pop r13
     pop r12
@@ -71,8 +78,14 @@ section .text
     push rsi
     mov rax, [gs:0x60]    ; PEB
     mov rax, [rax + 0x18] ; PPEB_LDR_DATA
-    mov rax, [rax + 0x10] ; LIST_ENTRY/LDR_DATA_TABLE_ENTRY argv[0]
+    mov rax, [rax + 0x20] ; LIST_ENTRY/LDR_DATA_TABLE_ENTRY argv[0]
     mov rax, [rax]
+    mov rax, [rax]
+    sub rax, 0x10
+    pop rdi
+    pop rsi
+    ret
+    ; TODO Why segfault on NTDLL.dll
     loop1:
       mov esi, [rax + 0x60] ; BaseDLLName->Buffer
       mov edi, ecx
