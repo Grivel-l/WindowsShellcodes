@@ -9,11 +9,14 @@ section .text
     mov rcx, rax
     mov rdx, functionName
     mov r8, functionNameLen
+    ; 00007FFE4BC4A310
+int3
     call getFunction
-    int3
+int3
     mov rcx, r12
     mov rdx, loadLibrary
     call rax
+    int3
   getFunction:
     push rbp
     push rbx
@@ -56,12 +59,12 @@ section .text
         jmp loop2
     retAddr:
       mov r9, r10
-      mov r12d, [r12 + 0x24]
-      add r9, r12
+      mov r13d, [r12 + 0x24]
+      add r9, r13
       mov bx, [r9 + rbx * 2]
       mov r9, r10
-      mov r12d, [r12 + 0x1c]
-      add r9, r12   ; Array of RVAs
+      mov r13d, [r12 + 0x1c]
+      add r9, r13   ; Array of RVAs
       mov r13, r10
       mov r9d, [r9 + rbx * 4]
       add r13, r9
