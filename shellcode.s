@@ -1,20 +1,33 @@
 global main
 
-; 00007FFDB8EBA310 - GetProcAddress
-; 00007FFDB8EA0000 - K32.dll
 section .text
   main:
+    sub rsp, 0x28
     mov rcx, k32Name
     mov rdx, k32Len
-    call getLDTE          ; rax = Kernel32 Image directory
-    mov r12, rax
+    call getLDTE
+    mov r12, rax          ; r12 = Kernel32 Image directory
     mov rcx, rax
     mov rdx, functionName
     mov r8, functionNameLen
     call getFunction
+    mov r13, rax          ; r13 = GetProcAddress
     mov rcx, [r12d + 0x30]
     mov rdx, loadLibrary
-    call rax
+    call rax              ; Get LoadLibraryA
+    mov r14, rax          ; r14 = LoadLibraryA
+    mov rcx, user
+    call rax              ; Load user32.dll
+    mov rcx, rax
+    mov rdx, msgBox
+    mov rax, r13
+    call rax              ; Get MessageBoxA
+    xor rcx, rcx
+    mov rdx, msg
+    mov r8, msg
+    xor r9, r9            ; MB_OK
+    call rax              ; Call MessageBoxA
+    add rsp, 0x28
     int3
   getFunction:
     push rbp
@@ -113,7 +126,7 @@ section .data
   k32Len equ ($ - k32Name) / 2
   functionName db "GetProcAddress", 0
   functionNameLen equ $ - functionName
-  user db "USER32.DLL", 0
-  user2 db "U", 0, "S", 0, "E", 0, "R", 0, "3", 0, "2", 0, ".", 0, "D", 0, "L", 0, "L", 0
-  user2Len equ ($ - user2) / 2
-  loadLibrary db "GetProcAddress", 0
+  user db "user32.dll", 0
+  loadLibrary db "LoadLibraryA", 0
+  msg db "HelloWorld", 0
+  msgBox db "MessageBoxA", 0
