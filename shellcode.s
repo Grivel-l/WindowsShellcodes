@@ -1,34 +1,43 @@
-global main
+[bits 64]
 
 section .text
   main:
     sub rsp, 0x28
-    mov rcx, k32Name
-    mov rdx, k32Len
+    call init
+    sub rax, $
+    mov r15, rax            ; $rip
+    mov rcx, r15
+    add rcx, k32Name
+    mov rdx, 11
     call getLDTE
     mov r12, rax          ; r12 = Kernel32 Image directory
     mov rcx, rax
-    mov rdx, functionName
-    mov r8, functionNameLen
+    mov rdx, r15
+    add rdx, functionName
+    mov r8, 15
     call getFunction
     mov r13, rax          ; r13 = GetProcAddress
     mov rcx, [r12d + 0x30]
-    mov rdx, loadLibrary
+    mov rdx, r15
+    add rdx, loadLibrary
     call rax              ; Get LoadLibraryA
     mov r14, rax          ; r14 = LoadLibraryA
-    mov rcx, user
+    mov rcx, r15
+    add rcx, user
     call rax              ; Load user32.dll
     mov rcx, rax
-    mov rdx, msgBox
+    mov rdx, r15
+    add rdx, msgBox
     mov rax, r13
     call rax              ; Get MessageBoxA
     xor rcx, rcx
-    mov rdx, msg
-    mov r8, msg
+    mov rdx, r15
+    add rdx, msg
+    xor r8, r8
     xor r9, r9            ; MB_OK
     call rax              ; Call MessageBoxA
     add rsp, 0x28
-    int3
+    jmp end               ; Jmp where additionnal code is added during compilation
   getFunction:
     push rbp
     push rbx
@@ -120,13 +129,15 @@ section .text
       pop rsi
       pop rdi
       ret
+    init:
+      mov rax, [rsp]
+      ret
 
 section .data
   k32Name db "K", 0, "E", 0, "R", 0, "N", 0, "E", 0, "L", 0, "3", 0, "2", 0, ".", 0, "d", 0, "l", 0, "l", 0
-  k32Len equ ($ - k32Name) / 2
   functionName db "GetProcAddress", 0
-  functionNameLen equ $ - functionName
   user db "user32.dll", 0
   loadLibrary db "LoadLibraryA", 0
   msg db "HelloWorld", 0
   msgBox db "MessageBoxA", 0
+  end
