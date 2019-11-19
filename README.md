@@ -1,2 +1,3 @@
-Windows structures list: terminus.rewolf.pl
+A 64 bits Windows shellcode.
 
+It just opens a HelloWorld MessageBox
