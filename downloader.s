@@ -75,7 +75,7 @@ section .text
     mov r11, r10
     mov r9d, [r9 + 0x20]
     add r11, r9  ; Array of RVA containing functions' name
-    mov rbx, 0
+    xor rbx, rbx
     loop2:
       mov r9, r10
       mov esi, [r11 + rbx * 0x4]
@@ -87,8 +87,9 @@ section .text
         cmpsb
         jne next2
         dec rbp
+        xor rax, rax
         ; TODO Maybe bug here, should I check EOF ?
-        cmp rbp, 0
+        cmp rbp, rax
         je retAddr
         jmp strcmp
       next2:
@@ -125,29 +126,9 @@ section .text
     pop rdi
     pop rsi
     ret
-    ; TODO Why segfault on NTDLL.dll
-    loop1:
-      mov esi, [rax + 0x60] ; BaseDLLName->Buffer
-      mov edi, ecx
-      mov r8, rdx
-      strcmpW:
-        cmpsw
-        jne next
-        dec r8
-        ; TODO Maybe bug here, should I check EOF ?
-        ; cmp r8, 0
-        je done
-        jmp strcmpW
-        next:
-          mov rax, [rax]
-          jmp loop1
-    done:
-      pop rsi
-      pop rdi
-      ret
-    init:
-      mov rax, [rsp]
-      ret
+  init:
+    mov rax, [rsp]
+    ret
 
 section .data
   k32Name db "K", 0, "E", 0, "R", 0, "N", 0, "E", 0, "L", 0, "3", 0, "2", 0, ".", 0, "d", 0, "l", 0, "l", 0
