@@ -14,6 +14,8 @@ O_APPEND EQU  0x0008
 section .text
   main:
     sub rsp, 6*8
+    push rbp
+    mov rbp ,rsp
     call init
     sub rax, $
     mov r15, rax            ; $rip
@@ -50,6 +52,7 @@ section .text
     xor r9, r9
     push r9
     call rax              ; Download &url to &filename
+    add rsp, 8            ; Clear parameters from stack
     ; TODO Check return value == S_OK
     mov rcx, r15
     add rcx, dll2
