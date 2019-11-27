@@ -99,7 +99,7 @@ section .text
         add rcx, filename
         mov rdx, 0
         call rax
-        int3
+        jmp end
     
   
   getFunction:
