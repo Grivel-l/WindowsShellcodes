@@ -54,16 +54,11 @@ section .text
     mov r8, r15
     add r8, filename
     xor r9, r9
-    push 0x0              ; 5th parameter is 64 bits
-    push 0x0
-    push 0x0
-    push 0x0
-    push 0x0
-    push 0x0
-    push 0x0
-    push 0x0
+    sub rsp, 0x40
+    mov QWORD [rsp], 0x0
+    mov QWORD [rsp+0x20], 0x0
     call rax              ; Download &url to &filename
-    add rsp, 64            ; Clear parameters from stack
+    add rsp, 0x40            ; Clear parameters from stack
     ; TODO Check return value == S_OK
     mov rcx, r15
     add rcx, dll2
